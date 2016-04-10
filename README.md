@@ -305,3 +305,77 @@ And this will not return anything(date must be full match)
 ```
 GET /elastic_coursea/book/_search?q=author.birth_date:1934
 ```
+#####5
+######search with query string
+using double quote
+```
+GET /elastic_course/book/_search?q=author:"Tim Dave"
+```
+Advanced: + is like AND , - is like AND NOT.  
+We have to url encode the query
+```
+GET elastic_course/book/_search?q=%2Bauthor%3A%22King%22%2Bgenre%3A%22Fiction%22 (must contain space between query)
+  // +author:"King"  =>encode = %2Bauthor%3A%22King%22
+  //+genre:"Fiction"=>  %2Bgenre%3A%22Fiction%22
+```
+Greater than
+```
+GET elastic_course/book/_search?q=score:>4        //score>4
+```
+A Or B 
+```
+//this query search record either with score>4 and contains kkkk or yyyy in synopsis
++score:>4 +synopsis:(kkkk yyyyy)  //must contain a space between queries.
++score:>4+synopsis:(kkkk yyyyy) //incorrect
+GET elastic_course/book/_search?q=%2Bscore%3A%3E4%20%2Bsynopsis%3A(kkkk%20yyyyy)  //actual
+```
+other query: ~,[2 TO 4]..
+######Searching with query DSL
+most basic
+```
+GET _search{}
+GET elastic_course/_search{}
+GET elastic_course/book/_search{}
+```
+search all items of multiple types
+```
+GET elastic_course/book,movie/_search{}
+```
+regex
+```
+GET elastic*/book,movie/_search{}
+```
+match_all: when you need all docs
+```
+GET elastic_course/book/_search
+{
+  "query": {
+    "match_all": {
+      
+    }
+  }
+}
+```
+match: one field. and multi_match ( same query on several fields)
+```
+GET elastic_course/book/_search
+{
+  "query": {
+    "match": {
+      "synopsis": "kkkk"
+    }
+  }
+}
+```
+```
+GET elastic_course/book/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "kkkk",
+      "fields": ["title","synopsis"]
+    }
+  }
+}
+```
+######filters
