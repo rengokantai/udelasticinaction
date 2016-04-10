@@ -533,3 +533,169 @@ Ex:
 //from =starting point  size=each page show numbers
 GET elastic_course/book/_search?from=0&size=1
 ```
+#####6
+######sorting on exactvalue fields
+Ex1:single field
+```
+GET elastic_course/book/_search
+{
+  "filter":{
+    "term":{
+      "genre":"Science Fiction"
+    }
+  },
+  
+  "sort": "score"
+}
+```
+Ex2 multiple field
+```
+GET elastic_course/book/_search
+{
+  "filter":{
+    "term":{
+      "genre":"Science Fiction"
+    }
+  },
+  
+  "sort": [
+    {
+      "score": {
+        "order": "desc"
+      }
+    },
+    {
+      "author": {
+        "order": "desc"
+      }
+    }
+  ]
+}
+```
+######sorting on fulltext
+```
+DELETE elastic_course
+```
+And review chapter 4 we have
+```
+PUT elastic_course
+{
+  "mappings": {
+    "book":{
+      "properties": {
+        "author":{
+          "type":"string",
+        "index":"not_analyzed"
+          
+        },
+        "genre":{
+          "type":"string",
+        "index":"not_analyzed"},
+        "score":{
+          "type": "double"
+        },
+          "synopsis":{
+          "type": "string",
+          "index": "analyzed",
+          "analyzer": "english"
+        },
+        "title":{
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+```
+Add filed in synopsis:
+```
+PUT elastic_coursea
+{
+  "mappings": {
+    "book":{
+      "properties": {
+        "author":{
+          "type":"string",
+        "index":"not_analyzed"
+          
+        },
+        "genre":{
+          "type":"string",
+        "index":"not_analyzed"},
+        "score":{
+          "type": "double"
+        },
+          "synopsis":{
+          "type": "string",
+          "analyzer": "english"
+          , "fields": {
+            "not_analyzed":{
+              "type": "string",
+              "index": "not_analyzed"   //Must memorize
+            }
+          }
+        },
+        "title":{
+          "type": "string"
+        }
+      }
+    }
+  }
+}
+```
+Then sort base on `not_analyzed`
+```
+GET elastic_coursea/book/_search
+{
+"query": {
+  "match_all": {}
+},
+"sort": [
+  {
+    "synopsis.not_analyzed": {
+      "order": "asc"
+    }
+  }
+]
+}
+```
+######Relevance in documents
+Note, higher the _score, higher relevance of the document.  
+First try
+```
+GET elastic_coursea/book/_search?explain
+{
+"query": {
+  "match": {"synopsis":"novel"}
+}
+}
+```
+and we can see the feedback
+```
+"details": [
+  {
+   "value": 0.30685282,
+    "description": "fieldWeight in 0, product of:",
+      "details": [
+          {
+             "value": 1,
+             "description": "tf(freq=1.0), with freq of:",
+             "details": [
+                {
+                   "value": 1,  //how many matches
+                   "description": "termFreq=1.0"
+                }
+             ]
+          },
+          {
+             "value": 0.30685282,
+             "description": "idf(docFreq=1, maxDocs=1)"
+          },
+          {
+             "value": 1,       //higher value means % of words in the paragraph are matched
+             "description": "fieldNorm(doc=0)"
+          }
+       ]
+    }
+  ]
+```
