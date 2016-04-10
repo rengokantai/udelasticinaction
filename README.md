@@ -379,3 +379,157 @@ GET elastic_course/book/_search
 }
 ```
 ######filters
+must:given query must match  
+must_not:must not match  
+should: at least one of them must match  
+```
+GET elastic_course/book/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match": {
+          "genre": "Fiction"
+        }}
+      ],
+      "must_not": [
+        {"match": {
+          "author": "King"
+        }}
+      ]
+    }
+  }
+}
+```
+
+```
+GET elastic_course/book/_search
+{  
+   "query":{  
+      "bool":{  
+         "must":[  
+            {  
+               "range":{  
+                  "score":{  
+                     "gte":3,
+                     "lte":100
+                  }
+               }
+            }
+         ],
+         "should":[  
+            {  
+               "match":{  
+                  "synopsis":"kkkk"
+               }
+            },
+            {  
+               "match":{  
+                  "author":"all"
+               }
+            }
+         ],
+         "minimum_number_should_match":1   //(at least)1 of 2  should criteria must match
+      }
+   }
+}
+```
+Nested filter
+```
+GET elastic_course/book/_search
+{  
+   "query":{  
+      "bool":{  
+         "should":[  
+            {  
+               "match":{  
+                  "genre":"Fiction"
+               }
+            },
+            {  
+               "bool":{  
+                  "must":[  
+                     {  
+                        "match":{  
+                           "author":"all"
+                        }
+                     }
+                  ],
+                  "must_not":[  
+                     {  
+                        "match":{  
+                           "title":"xxxxxx"
+                        }
+                     }
+                  ]
+               }
+            }
+         ],
+         "minimum_number_should_match":1
+      }
+   }
+}
+```
+######Queries and filters combined
+general syntax:
+```
+{"query":{
+"filtered":{
+"query":{},
+"filter":{}
+}}}
+```
+Ex
+```
+GET elastic_course/book/_search
+{  
+   "query":{  
+      "filtered":{  
+         "query":{  
+            "match":{  
+               "synopsis":"kkkk"
+            }
+         },
+         "filter":{  
+            "range":{  
+               "score":{  
+                  "gte":3,
+                  "lte":20
+               }
+            }
+         }
+      }
+   }
+}
+```
+######validating queries
+send the query and get back the result and see if there is an error,or use validate endpoint  
+```
+GET elastic_coursea/book/_validate/query
+{
+  "query":{
+    "match":{ 
+      "genre":"Fiction"
+    }
+  }
+}
+```
+analyze an error
+```
+GET elastic_course/book/_validate/query?explain
+{
+  "query":{
+    "xxx":{ //incorrect
+      "genre":"Fiction"
+    }
+  }
+}
+```
+######pagination
+you have to set 2 parameters.  
+size(limit number of  documents default=10) from(number of  documents to be skipped default=0)  
+Ex:
+```
+//from =starting point  size=each page show numbers
+GET elastic_course/book/_search?from=0&size=1
+```
